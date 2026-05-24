@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFileSync, writeFileSync, existsSync } from "fs";
-import { join } from "path";
+import { getRedis, hasRedis } from "../../lib/redis";
 
-// For Vercel: use /tmp for ephemeral storage
-// For persistence, swap with a DB (e.g. Vercel KV, PlanetScale, Supabase)
-const DATA_PATH = join("/tmp", "messages.json");
 const SENDER_SECRET = process.env.SENDER_SECRET ?? "change-this-secret";
 
 interface Message {
@@ -14,22 +10,27 @@ interface Message {
   read: boolean;
 }
 
-function readMessages(): Message[] {
+async function readMessages(): Promise<Message[]> {
   try {
-    if (!existsSync(DATA_PATH)) return [];
-    return JSON.parse(readFileSync(DATA_PATH, "utf-8"));
+    if (!hasRedis()) return [];
+    const redis = getRedis();
+    const res = await redis.get("messages");
+    if (!res) return [];
+    return JSON.parse(res as string) as Message[];
   } catch {
     return [];
   }
 }
 
-function writeMessages(msgs: Message[]) {
-  writeFileSync(DATA_PATH, JSON.stringify(msgs, null, 2));
+async function writeMessages(msgs: Message[]) {
+  if (!hasRedis()) return;
+  const redis = getRedis();
+  await redis.set("messages", JSON.stringify(msgs));
 }
 
 // GET /api/messages — fetch all messages (for her mailbox)
 export async function GET() {
-  const msgs = readMessages();
+  const msgs = await readMessages();
   return NextResponse.json(msgs);
 }
 
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
   if (body.secret !== SENDER_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const msgs = readMessages();
+  const msgs = await readMessages();
   const newMsg: Message = {
     id: Date.now().toString(),
     text: body.text?.trim() ?? "",
@@ -48,15 +49,18 @@ export async function POST(req: NextRequest) {
   };
   if (!newMsg.text) return NextResponse.json({ error: "Empty message" }, { status: 400 });
   msgs.unshift(newMsg);
-  writeMessages(msgs);
+  await writeMessages(msgs);
   return NextResponse.json({ ok: true, message: newMsg });
 }
 
 // PATCH /api/messages — mark a message as read
 export async function PATCH(req: NextRequest) {
   const { id } = await req.json();
-  const msgs = readMessages();
-  const msg = msgs.find(m => m.id === id);
-  if (msg) { msg.read = true; writeMessages(msgs); }
+  const msgs = await readMessages();
+  const msg = msgs.find((m) => m.id === id);
+  if (msg) {
+    msg.read = true;
+    await writeMessages(msgs);
+  }
   return NextResponse.json({ ok: true });
 }
