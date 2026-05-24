@@ -298,7 +298,7 @@ export default function Page() {
                 This is for you
               </h1>
               <p style={{ fontSize: 14, fontWeight: 200, letterSpacing: "0.1em", color: "var(--muted)" }}>
-                Enter her name to open
+                Enter your name to open
               </p>
             </div>
 
