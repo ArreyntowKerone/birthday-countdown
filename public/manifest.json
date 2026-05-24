@@ -1,0 +1,24 @@
+{
+  "name": "Happy Birthday 🎂",
+  "short_name": "For You",
+  "description": "A birthday gift, coded with love",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#06050f",
+  "theme_color": "#06050f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/cake2.jpeg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/cake1.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
