@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRedis, hasRedis } from "../../lib/redis";
+import { readFileSync, writeFileSync, existsSync } from "fs";
+import { join } from "path";
+
+// fallback path for local/dev when Redis isn't configured
+const DATA_PATH = join("/tmp", "messages.json");
 
 const SENDER_SECRET = process.env.SENDER_SECRET ?? "change-this-secret";
 
@@ -11,7 +16,15 @@ interface Message {
 }
 
 async function readMessages(): Promise<Message[]> {
-  if (!hasRedis()) throw new Error("Redis not configured");
+  if (!hasRedis()) {
+    try {
+      if (!existsSync(DATA_PATH)) return [];
+      return JSON.parse(readFileSync(DATA_PATH, "utf-8"));
+    } catch (err) {
+      console.error("readMessages (file fallback) error:", err);
+      return [];
+    }
+  }
   try {
     const redis = getRedis();
     const res = await redis.get("messages");
@@ -24,7 +37,15 @@ async function readMessages(): Promise<Message[]> {
 }
 
 async function writeMessages(msgs: Message[]) {
-  if (!hasRedis()) throw new Error("Redis not configured");
+  if (!hasRedis()) {
+    try {
+      writeFileSync(DATA_PATH, JSON.stringify(msgs, null, 2));
+      return;
+    } catch (err) {
+      console.error("writeMessages (file fallback) error:", err);
+      throw err;
+    }
+  }
   try {
     const redis = getRedis();
     await redis.set("messages", JSON.stringify(msgs));
