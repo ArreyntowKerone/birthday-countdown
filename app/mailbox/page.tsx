@@ -224,7 +224,7 @@ export default function MailboxPage() {
   useEffect(() => {
     fetch("/api/messages")
       .then(r => r.json())
-      .then(data => { setMessages(data); setLoading(false); })
+      .then(data => { setMessages(Array.isArray(data) ? data : []); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 

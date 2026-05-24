@@ -29,7 +29,7 @@ async function readMessages(): Promise<Message[]> {
     const redis = getRedis();
     const res = await redis.get("messages");
     if (!res) return [];
-    return JSON.parse(res as string) as Message[];
+    return (typeof res === "string" ? JSON.parse(res) : res) as Message[];
   } catch (err) {
     console.error("readMessages error:", err);
     throw err;

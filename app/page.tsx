@@ -72,12 +72,18 @@ function MailboxButton() {
   useEffect(() => {
     fetch("/api/messages")
       .then(r => r.json())
-      .then((msgs: { read: boolean }[]) => setUnread(msgs.filter(m => !m.read).length))
+      .then((msgs) => {
+        const arr = Array.isArray(msgs) ? msgs : [];
+        setUnread(arr.filter((m: { read: boolean }) => !m.read).length);
+      })
       .catch(() => {});
     const id = setInterval(() => {
       fetch("/api/messages")
         .then(r => r.json())
-        .then((msgs: { read: boolean }[]) => setUnread(msgs.filter(m => !m.read).length))
+        .then((msgs) => {
+          const arr = Array.isArray(msgs) ? msgs : [];
+          setUnread(arr.filter((m: { read: boolean }) => !m.read).length);
+        })
         .catch(() => {});
     }, 15000);
     return () => clearInterval(id);

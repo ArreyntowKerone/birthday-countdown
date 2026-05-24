@@ -18,8 +18,9 @@ export default function SendPage() {
         body: JSON.stringify({ text: text.trim(), secret: secret.trim() }),
       });
       if (!res.ok) {
-        const d = await res.json();
-        setErrorMsg(d.error ?? "Something went wrong");
+        let d: any = {};
+        try { d = await res.json(); } catch {}
+        setErrorMsg(d?.error ?? d?.message ?? "Something went wrong");
         setStatus("error");
         return;
       }
